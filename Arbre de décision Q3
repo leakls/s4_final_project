@@ -1,0 +1,54 @@
+library(rpart)# Pour l’arbre de décision
+library(rpart.plot) # Pour la représentation de l’arbre de décision
+diabetes_prediction_dataset$gender [diabetes_prediction_dataset$gender == "Other"] <- NA
+diabetes_prediction_dataset$smoking_history [diabetes_prediction_dataset$smoking_history == "No Info"] <- NA
+glimpse(diabetes_prediction_dataset)
+diabetes_prediction_dataset$gender <- as.factor(diabetes_prediction_dataset$gender)
+diabetes_prediction_dataset$hypertension <- as.factor(diabetes_prediction_dataset$hypertension)
+diabetes_prediction_dataset$heart_disease <- as.factor(diabetes_prediction_dataset$heart_disease)
+diabetes_prediction_dataset$heart_disease <- as.factor(diabetes_prediction_dataset$heart_disease)
+diabetes_prediction_dataset$smoking_history <- as.factor(diabetes_prediction_dataset$smoking_history)
+diabetes_prediction_dataset$diabetes <- as.factor(diabetes_prediction_dataset$diabetes)
+summary(diabetes_prediction_dataset)
+
+#Création d’un dataset d’apprentissage et d’un dataset de validation
+nb_lignes <- floor((nrow(diabetes_prediction_dataset)*0.75)) #Nombre de lignes de l’échantillon d’apprentissage : 75% du dataset
+diabetes_prediction_dataset <- diabetes_prediction_dataset[sample(nrow(diabetes_prediction_dataset)), ] #Ajout de numéros de lignes
+diabetes.train <- diabetes_prediction_dataset[1:nb_lignes, ] #Echantillon d’apprentissage
+diabetes.test <- diabetes_prediction_dataset[(nb_lignes+1):nrow(ptitanic), ] #Echantillon de 
+
+#Construction de l’arbre
+diabetes.Tree <- rpart(diabetes~.,data=diabetes.train,method= "class", control=rpart.control(minsplit=8,cp=0))
+
+#Affichage du résultat
+plot(diabetes.Tree, uniform=TRUE, branch=0.5, margin=0.1)
+text(diabetes.Tree, all=FALSE, use.n=TRUE)
+
+#On cherche à minimiser l’erreur pour définir le niveau d’élagage
+plotcp(diabetes.Tree)
+
+print(diabetes.Tree$cptable[which.min(diabetes.Tree$cptable[,4]),1])
+
+#Elagage de l’arbre avec le cp optimal
+diabetes.Tree_Opt <- prune(diabetes.Tree,cp=diabetes.Tree$cptable[which.min(diabetes.Tree$cptable[,4]),1])
+
+prp(diabetes.Tree_Opt,extra=1)
+
+#Prédiction du modèle sur les données de test
+diabetes.test_Predict<-predict(diabetes.Tree_Opt,newdata=diabetes.test, type= "class")
+
+#Matrice de confusion
+mc<-table(diabetes.test$diabetes,diabetes.test_Predict)
+print(mc)
+
+#Erreur de classement
+erreur.classement<-1.0-(mc[1,1]+mc[2,2])/sum(mc)
+print(erreur.classement)
+
+#Taux de prédiction
+prediction=mc[2,2]/sum(mc[2,])
+print(prediction)
+
+#Affichage des règles de construction de l’arbre
+print(diabetes.Tree_Opt)
+
