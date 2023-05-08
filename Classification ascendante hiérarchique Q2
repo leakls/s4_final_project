@@ -1,0 +1,35 @@
+# Sélection des variables et standardisation
+myvars <- wdbc[,c("radius_mean", "texture_mean", "perimeter_mean","area_mean","smoothness_mean","compactness_mean","concavity_mean","concave_points_mean","symmetry_mean","fractal_dimension_mean")]
+myvars <- scale(myvars)
+
+# Calcul de la matrice de distances
+mydist <- dist(myvars, method = "euclidean")
+
+# Classification ascendante hiérarchique
+myhclust <- hclust(mydist, method = "ward.D2")
+
+# Visualisation du dendrogramme
+plot(myhclust)
+
+# Détermination du nombre de groupes à former
+mycut <- cutree(myhclust, k = 2)
+
+# Attribution des individus aux groupes correspondants
+wdbc$groups <- mycut
+
+
+
+# Comparer les étiquettes de classes connues aux groupes obtenus par l'analyse de clustering
+install.packages("clValid")
+library(clValid)
+install.packages('mclust')
+library(mclust)
+clusters <- cutree(myhclust, k = 2) # groupe obtenu à partir de l'analyse de clustering
+ari <- adjustedRandIndex(clusters, wdbc$Diagnosis) # calcul de l'indice de Rand ajusté
+
+# Répéter pour différents nombres de groupes
+for (k in 2:6) {
+  clusters <- cutree(myhclust, k = k)
+  ari <- adjustedRandIndex(clusters, wdbc$Diagnosis)
+  print(paste0("ARI pour ", k, " groupes : ", ari))
+}
